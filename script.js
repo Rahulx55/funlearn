@@ -2,160 +2,97 @@
 var canvas = document.getElementById("gameCanvas");
 var ctx = canvas.getContext("2d");
 
-// Ball properties
-var ballRadius = 10;
-var x = canvas.width / 2;
-var y = canvas.height - 30;
-var dx = 2;
-var dy = -2;
+// Pac-Man properties
+var pacRadius = 20;
+var pacX = canvas.width / 2;
+var pacY = canvas.height / 2;
+var pacSpeed = 2;
 
-// Paddle properties
-var paddleHeight = 10;
-var paddleWidth = 75;
-var paddleX = (canvas.width - paddleWidth) / 2;
+// Ghost properties
+var ghostRadius = 15;
+var ghostX = Math.random() * canvas.width;
+var ghostY = Math.random() * canvas.height;
+var ghostSpeed = 1;
 
-// Brick properties
-var brickRowCount = 5;
-var brickColumnCount = 3;
-var brickWidth = 75;
-var brickHeight = 20;
-var brickPadding = 10;
-var brickOffsetTop = 30;
-var brickOffsetLeft = 30;
-var bricks = [];
-
-// Create bricks
-for (var c = 0; c < brickColumnCount; c++) {
-    bricks[c] = [];
-    for (var r = 0; r < brickRowCount; r++) {
-        bricks[c][r] = { x: 0, y: 0, status: 1 };
-    }
-}
-
-// Event listeners for paddle movement
+// Event listeners for Pac-Man movement
 document.addEventListener("keydown", keyDownHandler, false);
-document.addEventListener("keyup", keyUpHandler, false);
 
 // Track keyboard state
+var upPressed = false;
+var downPressed = false;
 var rightPressed = false;
 var leftPressed = false;
 
 function keyDownHandler(e) {
-    if (e.key == "Right" || e.key == "ArrowRight") {
+    if (e.key == "ArrowUp") {
+        upPressed = true;
+    } else if (e.key == "ArrowDown") {
+        downPressed = true;
+    } else if (e.key == "ArrowRight") {
         rightPressed = true;
-    } else if (e.key == "Left" || e.key == "ArrowLeft") {
+    } else if (e.key == "ArrowLeft") {
         leftPressed = true;
     }
 }
 
-function keyUpHandler(e) {
-    if (e.key == "Right" || e.key == "ArrowRight") {
-        rightPressed = false;
-    } else if (e.key == "Left" || e.key == "ArrowLeft") {
-        leftPressed = false;
-    }
-}
-
-// Collision detection for bricks
-function collisionDetection() {
-    for (var c = 0; c < brickColumnCount; c++) {
-        for (var r = 0; r < brickRowCount; r++) {
-            var brick = bricks[c][r];
-            if (brick.status == 1) {
-                if (
-                    x > brick.x &&
-                    x < brick.x + brickWidth &&
-                    y > brick.y &&
-                    y < brick.y + brickHeight
-                ) {
-                    dy = -dy;
-                    brick.status = 0;
-                }
-            }
-        }
-    }
-}
-
-// Draw ball
-function drawBall() {
+function drawPacMan() {
     ctx.beginPath();
-    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "#0095DD";
+    ctx.arc(pacX, pacY, pacRadius, 0.2 * Math.PI, 1.8 * Math.PI);
+    ctx.lineTo(pacX, pacY);
+    ctx.fillStyle = "yellow";
     ctx.fill();
     ctx.closePath();
 }
 
-// Draw paddle
-function drawPaddle() {
+function drawGhost() {
     ctx.beginPath();
-    ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-    ctx.fillStyle = "#0095DD";
+    ctx.arc(ghostX, ghostY, ghostRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
     ctx.fill();
     ctx.closePath();
 }
 
-// Draw bricks
-function drawBricks() {
-    for (var c = 0; c < brickColumnCount; c++) {
-        for (var r = 0; r < brickRowCount; r++) {
-            if (bricks[c][r].status == 1) {
-                var brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
-                var brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
-                bricks[c][r].x = brickX;
-                bricks[c][r].y = brickY;
-                ctx.beginPath();
-                ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                ctx.fillStyle = "#0095DD";
-                ctx.fill();
-                ctx.closePath();
-            }
-        }
-    }
-}
-
-// Draw the message
 function drawMessage() {
     document.getElementById("message-container").classList.remove("hidden");
 }
 
-// Draw everything
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBricks();
-    drawBall();
-    drawPaddle();
+    drawPacMan();
+    drawGhost();
+    movePacMan();
+    moveGhost();
     collisionDetection();
-
-    // Ball movement
-    x += dx;
-    y += dy;
-
-    // Ball collision with walls
-    if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-        dx = -dx;
-    }
-    if (y + dy < ballRadius) {
-        dy = -dy;
-    } else if (y + dy > canvas.height - ballRadius) {
-        // Ball collision with paddle
-        if (x > paddleX && x < paddleX + paddleWidth) {
-            dy = -dy;
-        } else {
-            // Game over
-            drawMessage();
-            return;
-        }
-    }
-
-    // Paddle movement
-    if (rightPressed && paddleX < canvas.width - paddleWidth) {
-        paddleX += 7;
-    } else if (leftPressed && paddleX > 0) {
-        paddleX -= 7;
-    }
-
     requestAnimationFrame(draw);
 }
 
-// Initialize the game
+function movePacMan() {
+    if (upPressed && pacY - pacSpeed > 0) {
+        pacY -= pacSpeed;
+    }
+    if (downPressed && pacY + pacSpeed < canvas.height) {
+        pacY += pacSpeed;
+    }
+    if (rightPressed && pacX + pacSpeed < canvas.width) {
+        pacX += pacSpeed;
+    }
+    if (leftPressed && pacX - pacSpeed > 0) {
+        pacX -= pacSpeed;
+    }
+}
+
+function moveGhost() {
+    var directionX = Math.random() > 0.5 ? 1 : -1;
+    var directionY = Math.random() > 0.5 ? 1 : -1;
+    ghostX += ghostSpeed * directionX;
+    ghostY += ghostSpeed * directionY;
+}
+
+function collisionDetection() {
+    var distance = Math.sqrt(Math.pow(pacX - ghostX, 2) + Math.pow(pacY - ghostY, 2));
+    if (distance < pacRadius + ghostRadius) {
+        drawMessage();
+    }
+}
+
 draw();
